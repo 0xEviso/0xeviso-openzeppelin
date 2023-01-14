@@ -47,8 +47,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     }
 
     function transfer(address to, uint256 amount) external returns (bool) {
-        address from = _msgSender();
-        _transfer(from, to, amount);
+        address _from = _msgSender();
+        _transfer(_from, to, amount);
         return true;
     }
 
@@ -78,8 +78,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {
-        address owner = _msgSender();
-        _approve(owner, spender, amount);
+        address _owner = _msgSender();
+        _approve(_owner, spender, amount);
         return true;
     }
 
@@ -90,8 +90,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) internal virtual {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
-        _allowances[owner][spender] = amount;
 
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
@@ -101,15 +101,18 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         uint256 amount
     ) external returns (bool) {
         require(to != address(0), "ERC20: transfer to the zero address");
-                require(
+        require(
             _balances[from] >= amount,
             "ERC20: transfer amount exceeds balance"
         );
-        require(
-            _allowances[from][to] >= amount,
-            "ERC20: insufficient allowance"
-        );
 
+        address spender = _msgSender();
+        uint256 _allowance = _allowances[from][spender];
+
+        if (_allowance != type(uint256).max) {
+            require(_allowance >= amount, "ERC20: insufficient allowance");
+            _approve(from, spender, _allowance - amount);
+        }
         _transfer(from, to, amount);
         return true;
     }
@@ -119,9 +122,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         virtual
         returns (bool)
     {
-        address owner = _msgSender();
-        uint256 _allowance = _allowances[owner][spender] + addedValue;
-        _approve(owner, spender, _allowance);
+        address _owner = _msgSender();
+        uint256 _allowance = _allowances[_owner][spender] + addedValue;
+        _approve(_owner, spender, _allowance);
         return true;
     }
 
@@ -130,15 +133,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         virtual
         returns (bool)
     {
-        address owner = _msgSender();
+        address _owner = _msgSender();
 
         require(
-            _allowances[owner][spender] >= subtractedValue,
+            _allowances[_owner][spender] >= subtractedValue,
             "ERC20: decreased allowance below zero"
         );
 
-        uint256 _allowance = _allowances[owner][spender] - subtractedValue;
-        _approve(owner, spender, _allowance);
+        uint256 _allowance = _allowances[_owner][spender] - subtractedValue;
+        _approve(_owner, spender, _allowance);
         return true;
     }
 
